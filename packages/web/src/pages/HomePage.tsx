@@ -1,0 +1,16 @@
+// packages/web/src/pages/HomePage.tsx
+
+import { useWebState } from '../hooks/useAppState.ts'
+
+export function HomePage() {
+  const sessionId = useWebState((s) => s.session.sessionId)
+
+  return (
+    <div className="text-center space-y-4">
+      <h1 className="text-3xl font-bold text-blue-500">xAgent</h1>
+      <p className="text-slate-400">v0.1.0</p>
+      <p className="text-xs text-slate-600">Session: {sessionId}</p>
+      <p className="text-slate-300">Ready.</p>
+    </div>
+  )
+}

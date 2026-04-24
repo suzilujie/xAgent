@@ -1,0 +1,26 @@
+{
+  "name": "xagent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "bun run scripts/dev.ts",
+    "dev:terminal": "bun --filter @xagent/terminal dev",
+    "dev:web": "bun --filter @xagent/web dev",
+    "build": "bun run scripts/build.ts",
+    "build:terminal": "bun --filter @xagent/terminal build",
+    "build:web": "bun --filter @xagent/web build",
+    "lint": "biome check .",
+    "check": "tsc --noEmit -p packages/core/tsconfig.json && biome check .",
+    "clean": "bun run scripts/clean.ts",
+    "release": "bun run scripts/release.ts",
+    "release:patch": "bun run scripts/release.ts patch",
+    "release:minor": "bun run scripts/release.ts minor",
+    "release:major": "bun run scripts/release.ts major"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.7.0"
+  }
+}
