@@ -1,7 +1,10 @@
 // packages/shared/src/i18n.ts
+// 国际化模块 —— 提供中英文的多语言翻译支持
 
+/** 支持的语言区域 */
 type Locale = 'zh-CN' | 'en-US'
 
+/** 各语言的翻译消息映射表（key → 翻译文本） */
 const messages: Record<Locale, Record<string, string>> = {
   'zh-CN': {
     'app.name': 'xAgent',
@@ -25,6 +28,12 @@ const messages: Record<Locale, Record<string, string>> = {
   },
 }
 
+/**
+ * 翻译函数 —— 根据语言区域获取对应的翻译文本
+ * @param key - 翻译键
+ * @param locale - 目标语言区域（默认中文）
+ * @returns 翻译后的文本，未找到时返回原始 key
+ */
 export function t(key: string, locale: Locale = 'zh-CN'): string {
   return messages[locale]?.[key] ?? key
 }

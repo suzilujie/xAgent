@@ -1,8 +1,11 @@
 // packages/web/src/pages/HomePage.tsx
+// 首页组件 —— Web 应用的主页面，展示应用信息和会话状态
 
 import { useWebState } from '../hooks/useAppState.ts'
 
+/** 首页组件 —— 展示应用名称、版本号和当前会话 ID */
 export function HomePage() {
+  // 从全局状态中订阅当前会话 ID
   const sessionId = useWebState((s) => s.session.sessionId)
 
   return (
