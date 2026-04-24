@@ -1,9 +1,12 @@
 {
   "name": "xagent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "dev": "bun run scripts/dev.ts",
     "dev:terminal": "bun --filter @xagent/terminal dev",
