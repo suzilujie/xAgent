@@ -392,13 +392,93 @@ bun run check              # 类型检查 + Lint
 
 ---
 
-## 11. 功能清单
+## 11. 开发约束规范
+
+### 11.1 命名规范
+
+| 类型 | 规则 | 示例 |
+|---|---|---|
+| **组件/类文件** | `PascalCase` | `MainScreen.tsx`, `CoreEngine.ts` |
+| **工具函数/模块文件** | `kebab-case` | `format-date.ts`, `http-client.ts` |
+| **常量文件** | `UPPER_SNAKE_CASE` | `API_ENDPOINTS.ts` |
+| **组件/类导出** | 必须与文件名一致 | `MainScreen.tsx` → `export MainScreen` |
+| **接口** | `I` 前缀 | `ITool`, `IAppState`, `IEngineConfig` |
+| **类型别名** | `T` 前缀 | `TTaskState`, `TToolOutput`, `TSession` |
+
+### 11.2 导入/导出约束
+
+- 每个模块目录必须提供 `index.ts` 作为统一出口（barrel export）
+- 禁止跨包直接引用内部路径（如 `import from '@xagent/core/src/...'`），只能通过包声明的 `exports` 入口
+- 禁止循环依赖，包内模块间通过 `index.ts` 中转，避免 A ↔ B 直接互引
+- 禁止使用 `export *` 通配符导出，必须显式列出导出项
+
+### 11.3 依赖白名单
+
+| 包 | 允许依赖 | 禁止依赖 |
+|---|---|---|
+| `core` | `zod`, `zustand` 及其他非 UI 库 | `react`, `ink`, `chalk`, `terminal`, `web` |
+| `shared` | 无外部运行时依赖 | 任何 UI 框架 |
+| `terminal` | `ink`, `react`, `core`, `shared` | `web`, 浏览器 API（`window`, `document`） |
+| `web` | `react`, `vite`, `core`, `shared` | `ink`, `chalk`, Node 专有 API |
+
+### 11.4 错误处理规范
+
+- 核心包定义统一的 `AppError` 层级：`EngineError`, `ToolError`, `PermissionError` 等，均继承自基类
+- 所有 `Tool.execute()` 必须用 try-catch 包裹，异常统一转为 `ToolError` 后抛出
+- 禁止在核心层使用 `console.log` / `console.error`，统一通过 `Logger` 服务或 `EventBus` 输出
+- 终端端/Web 端分别在 UI 边界层处理错误展示，核心层只负责抛出结构化错误
+
+### 11.5 函数与文件约束
+
+| 维度 | 限制 | 说明 |
+|---|---|---|
+| **单文件行数** | ≤ 300 行 | 超出必须拆分为独立模块 |
+| **单函数行数** | ≤ 50 行 | 复杂逻辑通过提取子函数拆解 |
+| **单文件导出** | 1 个主要组件/类 | 允许配套导出类型、辅助函数 |
+| **工具函数** | 必须为纯函数 | 无副作用，参数和返回值必须有明确类型 |
+
+### 11.6 Commit 规范
+
+- 采用 **Conventional Commits** 格式：`type(scope): description`
+- `type` 仅允许：`feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf`, `ci`
+- `scope` 对应包名或模块名：`core`, `terminal`, `web`, `shared`, `release`
+- 示例：`feat(core): add Tool registry`, `fix(terminal): handle resize event`
+
+### 11.7 副作用隔离
+
+- `core` 包中所有函数必须是纯函数或显式标记副作用
+- 副作用操作（文件 I/O、网络请求、数据库写入）必须封装在 `services/` 层
+- 状态变更只能通过 Zustand Store 的 `set` / `dispatch` 方法，禁止直接修改 store 对象
+
+### 11.8 日志规范
+
+- 核心层通过 `Logger` 服务抽象日志，由终端端/Web 端分别实现适配器
+- 日志级别：`debug`, `info`, `warn`, `error`，生产环境默认 `info` 以上
+- 日志消息必须为英文，便于日志检索与分析
+
+### 11.9 环境变量管理
+
+- 所有环境变量通过 `.env` 文件或运行时参数注入，禁止硬编码
+- 核心层通过 `ConfigState` 读取配置，不直接访问 `process.env`
+- 终端端通过 `process.env`，Web 端通过 `import.meta.env`（Vite）读取环境变量
+- 所有环境变量必须在 `.env.example` 中声明并附带说明
+
+### 11.10 安全约束
+
+- 禁止在代码中提交密钥、Token、密码等敏感信息
+- `.env*` 文件必须加入 `.gitignore`
+- 依赖必须定期审计（`bun audit`），CI 中强制检查
+- 外部输入必须通过 Zod Schema 校验后方可使用，防止注入风险
+
+---
+
+## 12. 功能清单
 
 > 待补充。后续在此处添加具体业务功能模块。
 
 ---
 
-## 12. 里程碑（技术架构）
+## 13. 里程碑（技术架构）
 
 | 阶段 | 目标 | 交付物 |
 |---|---|---|
@@ -411,15 +491,15 @@ bun run check              # 类型检查 + Lint
 
 ---
 
-## 13. 发布流程
+## 14. 发布流程
 
-### 13.1 版本管理策略
+### 14.1 版本管理策略
 
 - 采用 **SemVer** 语义化版本（`MAJOR.MINOR.PATCH`）
 - 所有包（`core`、`shared`、`terminal`、`web`）版本号保持同步
 - 每次发布自动创建 Git Tag（格式：`v{version}`）
 
-### 13.2 发布命令
+### 14.2 发布命令
 
 ```bash
 # 补丁版本（默认）— 修复 bug、小改动
@@ -432,7 +512,7 @@ bun run release:minor
 bun run release:major
 ```
 
-### 13.3 发布流程（自动化 7 步）
+### 14.3 发布流程（自动化 7 步）
 
 ```
 [1/7] 前置检查        — Lint + 类型检查
@@ -446,7 +526,7 @@ bun run release:major
 
 > 发布脚本：`scripts/release.ts`
 
-### 13.4 发布后操作
+### 14.4 发布后操作
 
 发布脚本完成后，需手动执行推送与部署：
 
@@ -458,10 +538,10 @@ git push origin main --tags
 npm publish --access public
 
 # Web 端部署（推送后自动触发 CI/CD，或手动部署）
-# 详见 §13.6
+# 详见 §14.6
 ```
 
-### 13.5 终端端（CLI）发布
+### 14.5 终端端（CLI）发布
 
 终端端作为 CLI 工具发布到 npm Registry：
 
@@ -480,7 +560,7 @@ npm publish
 
 > 用户安装：`npm install -g @xagent/terminal` 或 `bun add -g @xagent/terminal`
 
-### 13.6 Web 端部署
+### 14.6 Web 端部署
 
 Web 端为静态 SPA，构建产物在 `packages/web/dist/`，支持以下部署方式：
 
@@ -503,7 +583,7 @@ Web 端为静态 SPA，构建产物在 `packages/web/dist/`，支持以下部署
 }
 ```
 
-### 13.7 回滚策略
+### 14.7 回滚策略
 
 ```bash
 # 回退到指定版本
@@ -513,7 +593,7 @@ bun run build
 # 或重新发布终端端
 ```
 
-### 13.8 CI/CD 集成（推荐）
+### 14.8 CI/CD 集成（推荐）
 
 建议后续添加 GitHub Actions 自动化：
 

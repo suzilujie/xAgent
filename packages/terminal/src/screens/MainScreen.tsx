@@ -1,6 +1,6 @@
 // packages/terminal/src/screens/MainScreen.tsx
 
-import { Box, Text } from 'ink'
+import { Box, Text, useApp } from 'ink'
 import React, { useCallback, useState } from 'react'
 import { CommandLine } from '../components/CommandLine.tsx'
 import { OutputLog } from '../components/OutputLog.tsx'
@@ -12,6 +12,7 @@ function addLog(prev: LogEntry[], type: LogEntry['type'], message: string): LogE
 }
 
 export function MainScreen() {
+  const { exit } = useApp()
   const sessionId = useTerminalState((s) => s.session.sessionId)
   const [logs, setLogs] = useState<LogEntry[]>(() => [
     {
@@ -31,22 +32,28 @@ export function MainScreen() {
 
       switch (command) {
         case 'help':
-          setLogs((prev) => [
-            ...addLog(prev, 'system', '可用命令:'),
-            ...addLog(prev, 'system', '  help     — 显示帮助信息'),
-            ...addLog(prev, 'system', '  status   — 查看引擎状态'),
-            ...addLog(prev, 'system', '  tools    — 查看已注册工具'),
-            ...addLog(prev, 'system', '  echo     — 回显消息 (echo <msg>)'),
-            ...addLog(prev, 'system', '  clear    — 清空输出'),
-            ...addLog(prev, 'system', '  exit     — 退出'),
-          ])
+          setLogs((prev) =>
+            [
+              '可用命令:',
+              '  help     — 显示帮助信息',
+              '  status   — 查看引擎状态',
+              '  tools    — 查看已注册工具',
+              '  echo     — 回显消息 (echo <msg>)',
+              '  clear    — 清空输出',
+              '  exit     — 退出',
+            ].reduce((acc, msg) => addLog(acc, 'system', msg), prev),
+          )
           break
 
         case 'status':
-          setLogs((prev) => [
-            ...addLog(prev, 'system', `Session: ${sessionId}`),
-            ...addLog(prev, 'success', '引擎运行中 ✓'),
-          ])
+          setLogs((prev) =>
+            (
+              [
+                ['system', `Session: ${sessionId}`],
+                ['success', '引擎运行中 ✓'],
+              ] as [LogEntry['type'], string][]
+            ).reduce<LogEntry[]>((acc, [type, msg]) => addLog(acc, type, msg), prev),
+          )
           break
 
         case 'tools':
@@ -62,7 +69,8 @@ export function MainScreen() {
           break
 
         case 'exit':
-          setLogs((prev) => addLog(prev, 'system', '按 Ctrl+C 退出'))
+          setLogs((prev) => addLog(prev, 'system', '再见!'))
+          exit()
           break
 
         default:

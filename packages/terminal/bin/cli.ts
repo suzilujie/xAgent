@@ -3,6 +3,7 @@
 import { render } from 'ink'
 import React from 'react'
 import { MainScreen } from '../src/main.tsx'
+import { getEngine } from '@xagent/core'
 
 const interactive = process.stdin.isTTY && process.stdout.isTTY
 
@@ -16,4 +17,22 @@ if (!interactive) {
   process.exit(0)
 }
 
-render(React.createElement(MainScreen))
+const { waitUntilExit, unmount } = render(React.createElement(MainScreen))
+
+function gracefulShutdown() {
+  const engine = getEngine()
+  engine.shutdown()
+    .catch(() => {})
+    .finally(() => {
+      unmount()
+      process.exit(0)
+    })
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+
+waitUntilExit().then(() => {
+  const engine = getEngine()
+  engine.shutdown().catch(() => {})
+})
